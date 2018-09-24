@@ -29,6 +29,7 @@ namespace Feladat01
 			switch (args[1])
 			{
 				case "\\a":
+				case "\\b":
 					for (int i = 0; i < size; i++)
 					{
 						for (int j = 0; j < size; j++)
@@ -41,8 +42,10 @@ namespace Feladat01
 							mxAB[i,j] = sum;
 						}
 					}
-					break;
-				case "\\b":
+					PrintOut(mxAB, size);
+
+					Console.WriteLine(stopwatch.ElapsedMilliseconds);
+				//case "\\b":
 					for (int i = 0; i < size; i++)
 					{
 						for (int j = 0; j < size; j++)
@@ -50,11 +53,12 @@ namespace Feladat01
 							int sum = 0;
 							for (int k = 0; k < size; k++)
 							{
-								sum += mxA[k, i] * mxB[j, k];
+								sum += mxA[j, k] * mxB[k, i];
 							}
-							mxAB[j, i] = sum;
+							mxAB[j,i] = sum;
 						}
 					}
+					PrintOut(mxAB, size);
 					break;
 				case "\\c":
 					Console.WriteLine("c");
@@ -68,6 +72,19 @@ namespace Feladat01
 			}
 			stopwatch.Stop();
 			Console.WriteLine(stopwatch.ElapsedMilliseconds);
+		}
+
+		static void PrintOut(int[,] mx, int size)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				for (int j = 0; j < size; j++)
+				{
+					Console.Write("{0}\t",mx[i,j]);
+				}
+				Console.WriteLine();
+			}
+			Console.WriteLine();
 		}
 	}
 }
