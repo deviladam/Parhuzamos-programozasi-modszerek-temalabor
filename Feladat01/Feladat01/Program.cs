@@ -3,20 +3,31 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Feladat01
 {
 	class Program
 	{
+		const int rngMax = 99;        //legnagyobb random szám 
+		
+		static int size = 1000; //mátrixok mérte 
+		static int[,] mxA;          //matrix A
+		static int[,] mxB;         //matrix B
+		static int[,] mxAB;     //matrix A*B
+		static int startHere = -1;
+		static int countDown;
+
 		static void Main(string[] args)
 		{
-			const int rngMax = 1000;		//legnagyobb random szám 
+			
 			Random random = new Random();
-			int size = int.Parse(args[0]);	//mátrixok mérte 
-			int[,] mxA = new int[size, size];	//matrix A
-			int[,] mxB = new int[size, size];    //matrix B
-			int[,] mxAB = new int[size, size];	//matrix A*B
+			if (args.Length > 0) { size = int.Parse(args[0]); };
+			mxA = new int[size, size];  
+			mxB = new int[size, size];   
+			mxAB = new int[size, size];  
+
 			for (int i = 0; i < size; i++)
 			{
 				for (int j = 0; j < size; j++)
@@ -25,11 +36,12 @@ namespace Feladat01
 					mxB[i,j] = random.Next(rngMax+1);
 				}
 			}
-			Stopwatch stopwatch = Stopwatch.StartNew(); 
-			switch (args[1])
+			Stopwatch stopwatch = Stopwatch.StartNew();
+			string alg = "\\c";
+			if (args.Length > 1) alg = args[1];
+			switch (alg)
 			{
 				case "\\a":
-				case "\\b":
 					for (int i = 0; i < size; i++)
 					{
 						for (int j = 0; j < size; j++)
@@ -42,10 +54,8 @@ namespace Feladat01
 							mxAB[i,j] = sum;
 						}
 					}
-					PrintOut(mxAB, size);
-
-					Console.WriteLine(stopwatch.ElapsedMilliseconds);
-				//case "\\b":
+					break;
+				case "\\b":
 					for (int i = 0; i < size; i++)
 					{
 						for (int j = 0; j < size; j++)
@@ -58,10 +68,18 @@ namespace Feladat01
 							mxAB[j,i] = sum;
 						}
 					}
-					PrintOut(mxAB, size);
 					break;
 				case "\\c":
-					Console.WriteLine("c");
+					countDown = size;
+					using (ManualResetEvent manualResetEvent = new ManualResetEvent(false))
+					{
+						startHere = -1;
+						for (int j = 0; j < size; j++)
+						{
+							ThreadPool.QueueUserWorkItem(ColumnSum, manualResetEvent);
+						}
+						manualResetEvent.WaitOne();
+					}
 					break;
 				case "\\d":
 					Console.WriteLine("d");
@@ -74,13 +92,32 @@ namespace Feladat01
 			Console.WriteLine(stopwatch.ElapsedMilliseconds);
 		}
 
-		static void PrintOut(int[,] mx, int size)
+		static void ColumnSum(object arg)
+		{
+			startHere++;
+			int j = startHere;
+			
+			for (int i = 0; i < size; i++)
+			{
+				int sum = 0;
+				for (int k = 0; k < size; k++)
+				{
+					sum += mxA[i, k] * mxB[k, j];
+				}
+				mxAB[i, j] = sum;
+			}
+			ManualResetEvent mrEvent = (ManualResetEvent)arg;
+			if (Interlocked.Decrement(ref countDown) == 0)
+				mrEvent.Set();
+		}
+
+		static void PrintOut()
 		{
 			for (int i = 0; i < size; i++)
 			{
 				for (int j = 0; j < size; j++)
 				{
-					Console.Write("{0}\t",mx[i,j]);
+					Console.Write("{0}\t",mxAB[i,j]);
 				}
 				Console.WriteLine();
 			}
