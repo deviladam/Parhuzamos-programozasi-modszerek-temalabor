@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -42,57 +43,76 @@ namespace Feladat01
 			switch (alg)
 			{
 				case "\\a":
-					for (int i = 0; i < size; i++)
-					{
-						for (int j = 0; j < size; j++)
-						{
-							int sum = 0;
-							for (int k = 0; k < size; k++)
-							{
-								sum += mxA[i, k] * mxB[k, j];
-							}
-							mxAB[i,j] = sum;
-						}
-					}
-					break;
+                    SimpleRow();
+                    stopwatch.Stop();
+                    ResultPrint("NaivRow", stopwatch.ElapsedMilliseconds, size);
+                    break;
 				case "\\b":
-					for (int i = 0; i < size; i++)
-					{
-						for (int j = 0; j < size; j++)
-						{
-							int sum = 0;
-							for (int k = 0; k < size; k++)
-							{
-								sum += mxA[j, k] * mxB[k, i];
-							}
-							mxAB[j,i] = sum;
-						}
-					}
-					break;
+                    SimpleColum();
+                    stopwatch.Stop();
+                    ResultPrint("NaivColum", stopwatch.ElapsedMilliseconds, size);
+                    break;
 				case "\\c":
-					countDown = size;
-					using (ManualResetEvent manualResetEvent = new ManualResetEvent(false))
-					{
-						startHere = -1;
-						for (int j = 0; j < size; j++)
-						{
-							ThreadPool.QueueUserWorkItem(ColumnSum, manualResetEvent);
-						}
-						manualResetEvent.WaitOne();
-					}
-					break;
+                    ThreadPoolAlg();
+                    stopwatch.Stop();
+                    ResultPrint("ThreadPool", stopwatch.ElapsedMilliseconds, size);
+                    break;
 				case "\\d":
-					Console.WriteLine("d");
-					break;
+                    ParallelAlg();
+                    stopwatch.Stop();
+                    ResultPrint("Parallel", stopwatch.ElapsedMilliseconds, size);
+                    break;
+                case "\\test":
+                    ResetMx();
+                    stopwatch.Restart();
+                    SimpleRow();
+                    stopwatch.Stop();
+                    ResultPrint("NaivRow", stopwatch.ElapsedMilliseconds, size);
+
+                    ResetMx();
+                    stopwatch.Restart();
+                    SimpleColum();
+                    stopwatch.Stop();
+                    ResultPrint("NaivColum", stopwatch.ElapsedMilliseconds, size);
+
+                    ResetMx();
+                    stopwatch.Restart();
+                    ThreadPoolAlg();
+                    stopwatch.Stop();
+                    ResultPrint("ThreadPool", stopwatch.ElapsedMilliseconds, size);
+
+                    ResetMx();
+                    stopwatch.Restart();
+                    ParallelAlg();
+                    stopwatch.Stop();
+                    ResultPrint("Parallel", stopwatch.ElapsedMilliseconds, size);
+                    break;
 				default:
 					Console.WriteLine("Invalid parameter! 1. param: mátrix méret\t2. param: algoritmus (\\a, \\b, \\c, vagy \\d)");
 					break;
 			}
 			stopwatch.Stop();
-			Console.WriteLine(stopwatch.ElapsedMilliseconds);
-		}
 
-		static void ColumnSum(object arg)
+            //Console.WriteLine(stopwatch.ElapsedMilliseconds);
+        }
+
+        static void ResultPrint(string alg,long ms,int size)
+        {
+            Console.WriteLine("{0};{1};{2}", alg, ms, size);
+        }
+
+        static void ResetMx()
+        {
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    mxAB[i, j] = 0;
+                }
+            }
+        }
+
+		static void ColumnSum(object arg) //Egy oszlop kiszámítása
 		{
 			startHere++;
 			int j = startHere;
@@ -111,7 +131,8 @@ namespace Feladat01
 				mrEvent.Set();
 		}
 
-		static void PrintOut()
+
+		static void PrintOut() // Eredmény mátrix kiírása
 		{
 			for (int i = 0; i < size; i++)
 			{
@@ -123,5 +144,71 @@ namespace Feladat01
 			}
 			Console.WriteLine();
 		}
-	}
+
+        static void SimpleRow() // naiv algoritmus 
+        {
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    int sum = 0;
+                    for (int k = 0; k < size; k++)
+                    {
+                        sum += mxA[i, k] * mxB[k, j];
+                    }
+                    mxAB[i, j] = sum;
+                }
+            }
+        }
+
+        static void SimpleColum() //naiv algoritmus felcserélve
+        {
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    int sum = 0;
+                    for (int k = 0; k < size; k++)
+                    {
+                        sum += mxA[j, k] * mxB[k, i];
+                    }
+                    mxAB[j, i] = sum;
+                }
+            }
+        }
+
+        static void ThreadPoolAlg() //ThreadPool-os algoritmus
+        {
+            //ThreadPool.SetMinThreads(1, 100);
+            //ThreadPool.SetMaxThreads(4, 4000);
+            
+            countDown = size;
+            using (ManualResetEvent manualResetEvent = new ManualResetEvent(false))
+            {
+                startHere = -1;
+                for (int j = 0; j < size; j++)
+                {
+                    ThreadPool.QueueUserWorkItem(ColumnSum, manualResetEvent);
+                }
+                manualResetEvent.WaitOne();
+            }
+        }
+
+        static void ParallelAlg() //Parallel algoritmus
+        {
+            Parallel.For(0, size, delegate (int i)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    int sum = 0;
+                    for (int k = 0; k < size; k++)
+                    {
+                        sum += mxA[i, k] * mxB[k, j];
+                    }
+                    mxAB[i, j] = sum;
+                }
+
+            });
+        }
+    }
 }
