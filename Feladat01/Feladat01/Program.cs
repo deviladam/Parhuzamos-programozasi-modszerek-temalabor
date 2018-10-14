@@ -98,7 +98,7 @@ namespace Feladat01
                         ParallelAlg();
                         stopwatch.Stop();
                         times[3] = stopwatch.ElapsedMilliseconds;
-                        Console.WriteLine("{0};{1};{2};{3};{4}",size, times[0], times[1], times[2], times[3]); //első  mátris mérete, többi az algoritmusok futási ideje
+                        Console.WriteLine("{0};{1};{2};{3};{4}",size, times[0], times[1], times[2], times[3]); //első  mátrix mérete, többi az algoritmusok futási ideje
                     
                     
                     break;

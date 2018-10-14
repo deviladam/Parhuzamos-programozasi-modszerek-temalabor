@@ -1,0 +1,1 @@
+javac -encoding utf8 -d out\production\Feladat02 src\*.java
