@@ -33,7 +33,7 @@ namespace Feladat03
                     break;
                 case "m":
                     stopwatch.Restart();
-                    ParallelMerge(0, size - 1, 100);
+                    ParallelMerge(0, size - 1, 16);
                     stopwatch.Stop();
                     Console.WriteLine("{0}", stopwatch.ElapsedMilliseconds);
                     break;
@@ -44,7 +44,7 @@ namespace Feladat03
                     long quick = stopwatch.ElapsedMilliseconds;
                     ResetArray();
                     stopwatch.Restart();
-                    ParallelMerge(0, size - 1, 100);
+                    ParallelMerge(0, size - 1, 16);
                     stopwatch.Stop();
                     long paral = stopwatch.ElapsedMilliseconds;
                     Console.WriteLine("{0};{1};{2}", size,quick,paral);
