@@ -1,0 +1,1 @@
+java -cp out\production\Feladat04 Main {mátrix mérete} {algoritmus q m} {>> <file.example> kimenet átirányítása}
