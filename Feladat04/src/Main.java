@@ -1,15 +1,15 @@
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 public class Main {
     private static final int maxNumber = 10000000;
 
-    private static int size = 70;
+    private static ExecutorService es;
+
+    private static int size = 5000000;
     private static int[] vec;
     private static int[] copy;
 
@@ -29,7 +29,7 @@ public class Main {
                 break;
             case "m" :
                 start = Instant.now();
-                ParallelMerge(0,size-1,16);
+                ParallelMerge(0,size-1,4000);
                 finish = Instant.now();
                 ResultPrint("ParallelMerge",Duration.between(start, finish).toMillis(),size);
                 break;
@@ -43,32 +43,13 @@ public class Main {
         System.out.println(alg+';'+ms+';'+size);
     }
 
-
-
-    public static void ParallelMerge(int l, int r,int d)
+    public static void ParallelMerge(int l, int r, int d)
     {
-        ExecutorService es = Executors.newCachedThreadPool();
-        if (r - l +1< d)
-        {
-            QuickSort(l, r);
-            return;
-        }
-        int m = (l + r) / 2;
-        es.execute(new Runnable() {
-            @Override
-            public void run() {
-                ParallelMerge(l, m,d);
-            }
-        });
-        es.execute(new Runnable() {
-            @Override
-            public void run() {
-                ParallelMerge(m + 1, r,d);
-            }
-        });
+        es = Executors.newCachedThreadPool();
+        ParallelMergeInternal(l,r,d);
         es.shutdown();
         try {
-            if(!es.awaitTermination(3,TimeUnit.MINUTES)){
+            if(!es.awaitTermination(1,TimeUnit.MINUTES)){
                 es.shutdownNow();
             }
         } catch (InterruptedException e) {
@@ -76,10 +57,92 @@ public class Main {
             es.shutdownNow();
             Thread.currentThread().interrupt();
         }
-
-
-        Merge(l, m,m+1, r);
     }
+
+
+    public static void ParallelMergeInternal(int l, int r, int d) {
+       // if ( r <= l ) return;
+
+        if (r - l +1<= d)
+        {
+            QuickSort(l, r);
+            return;
+        }
+        int m = (l + r) / 2;
+        //System.out.println(l+"\t"+m+"\t");
+        Future f1 = es.submit((Callable<Boolean>) () -> {
+            ParallelMergeInternal(l, m, d);
+            return true;
+        });
+        //System.out.println((m+1)+"\t"+r);
+        Future f2 = es.submit((Callable<Boolean>) () -> {
+            ParallelMergeInternal(m + 1, r, d);;
+            return true;
+        });
+
+        try {
+            f1.get();
+            f2.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        InLineMerge(l, m, r);
+    }
+
+    private static void InLineMerge(int left ,int middle,int right){
+        int length1 = middle - left + 1;
+        int length2 = right - middle;
+        if ( length1 >= length2 )
+        {
+            if ( length2 <= 0 )  return;
+            int q1 = ( left + middle ) / 2;
+            int q2 = BinSearch( vec[q1], middle + 1, right);
+            int q3 = q1 + ( q2 - middle - 1 );
+            BlockExchangeMirror( q1, middle, q2 - 1 );
+            InLineMerge( left,q1 - 1,q3 - 1 );
+            InLineMerge(q3 + 1,q2 - 1,right);
+        }
+        else {  // length1 < length2
+            if ( length1 <= 0 )  return;
+            int q1 = ( middle + 1 + right ) / 2;
+            int q2 = BinSearch( vec[ q1 ], left, middle);
+            int q3 = q2 + ( q1 - middle - 1 );
+            BlockExchangeMirror(q2,middle,q1);
+            InLineMerge(left,q2 - 1,q3 - 1 );
+            InLineMerge(q3 + 1, q1,right);
+        }
+    }
+
+    private static int BinSearch(int value, int left, int right){
+        int low  = left;
+        int high = Math.max( left, right+1);
+        while( low < high )
+        {
+            int mid = ( low + high ) / 2;
+            if ( value <= vec[ mid ] ) {
+                high = mid;
+            } else {
+                low  = mid + 1;
+            }
+        }
+        return high;
+    }
+
+    private static void BlockExchangeMirror(int left, int middle, int right){
+        Mirror( left, middle );
+        Mirror(middle + 1, right );
+        Mirror( left, right );
+    }
+
+    private static void Mirror(int left, int right) {
+        while (left < right) {
+            Swap(left++, right--);
+        }
+    }
+
+
 
     private static void Merge(int l1, int r1, int l2, int r2)
     {
@@ -169,5 +232,12 @@ public class Main {
                 System.out.print(vec[i] + "\t");
         }
         System.out.println();
+    }
+
+    public static boolean CheckVec(){
+        for (int i = 0; i < size - 1; i++) {
+            if (vec[i] > vec[i+1]) return false;
+        }
+        return true;
     }
 }
