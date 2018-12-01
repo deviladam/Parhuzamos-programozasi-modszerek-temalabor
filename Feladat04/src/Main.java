@@ -14,7 +14,7 @@ public class Main {
     private static int[] copy;
 
     public static void main(String[] args){
-        String alg = "m";
+        String alg = "q";
         if (args.length > 1) alg = args[1];
         InitVec(args);
         Instant start;
@@ -29,7 +29,7 @@ public class Main {
                 break;
             case "m" :
                 start = Instant.now();
-                ParallelMerge(0,size-1,4000);
+                ParallelMerge(0,size-1,100000);
                 finish = Instant.now();
                 ResultPrint("ParallelMerge",Duration.between(start, finish).toMillis(),size);
                 break;
@@ -62,19 +62,16 @@ public class Main {
 
     public static void ParallelMergeInternal(int l, int r, int d) {
        // if ( r <= l ) return;
-
         if (r - l +1<= d)
         {
             QuickSort(l, r);
             return;
         }
         int m = (l + r) / 2;
-        //System.out.println(l+"\t"+m+"\t");
         Future f1 = es.submit((Callable<Boolean>) () -> {
             ParallelMergeInternal(l, m, d);
             return true;
         });
-        //System.out.println((m+1)+"\t"+r);
         Future f2 = es.submit((Callable<Boolean>) () -> {
             ParallelMergeInternal(m + 1, r, d);;
             return true;
@@ -97,6 +94,10 @@ public class Main {
         if ( length1 >= length2 )
         {
             if ( length2 <= 0 )  return;
+            if (( length1 + length2 ) < 1000 ){
+                Merge(left,middle,middle+1,right);
+                return;
+            }
             int q1 = ( left + middle ) / 2;
             int q2 = BinSearch( vec[q1], middle + 1, right);
             int q3 = q1 + ( q2 - middle - 1 );
@@ -106,6 +107,10 @@ public class Main {
         }
         else {  // length1 < length2
             if ( length1 <= 0 )  return;
+            if (( length1 + length2 ) < 1000 ){
+                Merge(left,middle,middle+1,right);
+                return;
+            }
             int q1 = ( middle + 1 + right ) / 2;
             int q2 = BinSearch( vec[ q1 ], left, middle);
             int q3 = q2 + ( q1 - middle - 1 );
