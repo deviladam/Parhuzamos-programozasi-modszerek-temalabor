@@ -15,8 +15,13 @@ namespace Feladat05
         {
             Logic logic = new Logic();
             logic.Init(args);
-            
-            Thread.Sleep(int.MaxValue);
+            logic.StartProducer();
+            logic.StartConsumers();
+
+
+
+            Thread.Sleep(30000);
+            logic.ThthroughPut(false);
         }
 
 

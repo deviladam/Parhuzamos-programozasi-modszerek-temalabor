@@ -1,54 +1,78 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Feladat05
 {
-    class Logic
+    public class Logic
     {
-        private const int maxWaitTime = 1;
-        private const int numberOfTasks = 20;
-        private const int maxNumberOfColors = 3;
+        private const int maxWaitTime = 30;
         private const int taskOffset = 100000000;
-        private const int maxRandomTask = int.MaxValue-100000000;
-        
+        private const int maxRandomTask = 800000000;
 
-        private int numberOfConsumers = 4;
-        private List<ColorTasks> colorTasks = new List<ColorTasks>();
+        private int numberOfColors = 2;
+        private int numberOfConsumers = 10;
+        public List<ColorTasks> colorTasks = new List<ColorTasks>();
+
+        private static int solvedTasks = 0;
+        private object sync = new object();
+        private static Stopwatch sw = Stopwatch.StartNew();
+
+        private void IncSolvedTasks()
+        {
+            lock (sync)
+            {
+                solvedTasks++;
+            }
+        }
+
+        private void ResetSolvedTasks()
+        {
+            lock (sync)
+            {
+                solvedTasks = 0;
+            }
+        }
 
         public void Init(string[] args)
         {
-            
+
             if (args.Length > 0) { numberOfConsumers = int.Parse(args[0]); };
-            for (int i = 0; i < maxNumberOfColors; i++)
+            if (args.Length > 1) { numberOfColors = int.Parse(args[1]); };
+
+            for (int i = 0; i < numberOfColors; i++)
             {
                 colorTasks.Add(new ColorTasks());
-            }
-            new Thread(ProducerThread) { Name = "producer" }.Start();
+            }            
+        }
+
+        public void StartProducer()
+        {
+            new Thread(ProducerThread) { Name = "producer", IsBackground = true}.Start();
+            sw.Restart();
+        }
+
+        public void StartConsumers()
+        {
             for (int i = 0; i < numberOfConsumers; i++)
             {
-                new Thread(ConsumerThread) { Name = "consumer" + i }.Start();
+                new Thread(ConsumerThread) { Name = "consumer" + i, IsBackground = true }.Start();
             }
         }
 
         public void ProducerThread()
         {
-            Console.WriteLine("ProducerThread started");
             var random = new Random();
-
-            int waitMs = (random.Next(maxWaitTime) + 1) * 1000;
-            for (int i = 0; i < numberOfTasks; i++)
+            while(true)
             {
-                Thread.Sleep(waitMs);
-                int color = random.Next(maxNumberOfColors);
+                int color = random.Next(numberOfColors);
+                //Console.WriteLine("new task\t{0}", color);
                 colorTasks[color].Add(random.Next(maxRandomTask) + taskOffset);
-                waitMs = (random.Next(maxWaitTime) + 1) * 1000;
+                int waitMs = (random.Next(maxWaitTime) + 1) * 25;
+                Thread.Sleep(waitMs);
             }
-            Console.WriteLine("ProducerThread ended");
+            
         }
 
         public void ConsumerThread()
@@ -65,11 +89,11 @@ namespace Feladat05
                     {
                         try
                         {
-                            stopwatch.Restart();
+                            //Console.WriteLine("started\t{0}",color.GetColor());
                             done = FibonacciTask(n);
-                            stopwatch.Stop();
-                            Console.WriteLine("{0}\t{1}", stopwatch.ElapsedMilliseconds,n);
                             color.EndColorWorking();
+                            //Console.WriteLine("ended\t{0}", color.GetColor());
+                            IncSolvedTasks();
                         }
                         finally
                         {
@@ -101,24 +125,16 @@ namespace Feladat05
             return true;
         }
 
-
-        //For testing
-        /*public void PrintTasks()
+        public void ThthroughPut(Boolean text)
         {
-            foreach (var item in colorTasks)
+            sw.Stop();
+            if (text)
             {
-                int temp;
-                for (int i = 0; i < numberOfTasks; i++)
-                {
-                    if (item.Get(out temp))
-                    {
-                        Console.Write("{0}", temp);
-                        item.EndColorWorking();
-                    }
-
-                }
-                Console.WriteLine();
+                Console.Write("ColorNumber;ConsumerNumber;ThthroughPut(Hz):");
             }
-        }*/
+            Console.WriteLine("{0};{1};{2}",numberOfColors,numberOfConsumers, (double) solvedTasks / (sw.ElapsedMilliseconds/1000));
+            sw.Restart();
+            ResetSolvedTasks();
+        }
     }
 }

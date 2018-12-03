@@ -7,21 +7,27 @@ using System.Threading.Tasks;
 
 namespace Feladat05
 {
-    class ColorTasks
+    public class ColorTasks
     {
         private List<int> list = new List<int>();
         private ManualResetEvent haveTask = new ManualResetEvent(false);
         private ManualResetEvent colorNotWorking = new ManualResetEvent(true);
-        private object sync = new object();
+        private object syncPut = new object();
+        private object syncGet = new object();
+        private static int nextColor = 0;
+        private int currColor = nextColor++;
 
         public void EndColorWorking()
         {
-            colorNotWorking.Set();
+            lock (syncGet)
+            {
+                colorNotWorking.Set();
+            }
         }
 
         public void Add(int task)
         {
-            lock (sync)
+            lock (syncPut)
             {
                 list.Add(task);
                 haveTask.Set();
@@ -31,22 +37,32 @@ namespace Feladat05
         public bool Get(out int task)
         {
             task = -1;
-            if (WaitHandle.WaitAll(new WaitHandle[] {haveTask, colorNotWorking },1000))
-            {
-                lock (sync)
+            lock (syncGet)
+            { 
+                if (WaitHandle.WaitAll(new WaitHandle[] { colorNotWorking },50))
                 {
-                    if (list.Count > 0 )
-                    {
-                        task = list[0];
-                        list.RemoveAt(0);
-                        if (list.Count == 0)
-                            haveTask.Reset();
-                        colorNotWorking.Reset();
-                        return true;
+                    if (WaitHandle.WaitAll(new WaitHandle[] {haveTask  }, 50)) { 
+                        lock (syncPut)
+                        {
+                            if (list.Count > 0 )
+                            {
+                                colorNotWorking.Reset();
+                                task = list[0];
+                                list.RemoveAt(0);
+                                if (list.Count == 0)
+                                    haveTask.Reset();
+                                return true;
+                            }
+                        }
                     }
                 }
             }
             return false;
+        }
+
+        public int GetColor()
+        {
+            return currColor;
         }
     }
 }
