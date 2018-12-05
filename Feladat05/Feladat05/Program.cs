@@ -7,25 +7,18 @@ using System.Threading.Tasks;
 
 namespace Feladat05
 {
-    class Program
-    {
-        
+	class Program
+	{
+		static void Main(string[] args)
+		{
+			Logic logic = new Logic();
+			logic.Init(args);
+			logic.StartProducer();
+			logic.StartConsumers();
 
-        static void Main(string[] args)
-        {
-            Logic logic = new Logic();
-            logic.Init(args);
-            logic.StartProducer();
-            logic.StartConsumers();
-
-
-
-            Thread.Sleep(30000);
-            logic.ThthroughPut(false);
-        }
-
-
-    }
-
-
+				Thread.Sleep(30000);
+				logic.ThthroughPut(false);
+			
+		}
+	}
 }

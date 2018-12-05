@@ -7,62 +7,51 @@ using System.Threading.Tasks;
 
 namespace Feladat05
 {
-    public class ColorTasks
-    {
-        private List<int> list = new List<int>();
-        private ManualResetEvent haveTask = new ManualResetEvent(false);
-        private ManualResetEvent colorNotWorking = new ManualResetEvent(true);
-        private object syncPut = new object();
-        private object syncGet = new object();
-        private static int nextColor = 0;
-        private int currColor = nextColor++;
+	public class ColorTasks
+	{
+		private List<int> list = new List<int>();
+		private ManualResetEvent haveTask = new ManualResetEvent(false);
+		private AutoResetEvent colorNotWorking = new AutoResetEvent(true);
+		private object sync = new object();
+		private static int nextColor = -1;
+		private int currColor = Interlocked.Increment(ref nextColor);
 
-        public void EndColorWorking()
-        {
-            lock (syncGet)
-            {
-                colorNotWorking.Set();
-            }
-        }
+		//ColorTask.GetColor
+		public int CurrColor { get => currColor; }
 
-        public void Add(int task)
-        {
-            lock (syncPut)
-            {
-                list.Add(task);
-                haveTask.Set();
-            }
-        }
+		public void EndColorWorking()
+		{
+			colorNotWorking.Set();
+		}
 
-        public bool Get(out int task)
-        {
-            task = -1;
-            lock (syncGet)
-            { 
-                if (WaitHandle.WaitAll(new WaitHandle[] { colorNotWorking },50))
-                {
-                    if (WaitHandle.WaitAll(new WaitHandle[] {haveTask  }, 50)) { 
-                        lock (syncPut)
-                        {
-                            if (list.Count > 0 )
-                            {
-                                colorNotWorking.Reset();
-                                task = list[0];
-                                list.RemoveAt(0);
-                                if (list.Count == 0)
-                                    haveTask.Reset();
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
+		public void Add(int task)
+		{
+			lock (sync)
+			{
+				list.Add(task);
+				haveTask.Set();
+			}
+		}
 
-        public int GetColor()
-        {
-            return currColor;
-        }
-    }
+		public bool Get(out int task)
+		{
+			task = -1;
+			if (haveTask.WaitOne(50) && colorNotWorking.WaitOne(50))
+			{
+				lock (sync)
+				{
+					if (list.Count > 0)
+					{
+						task = list[0];
+						list.RemoveAt(0);
+						if (list.Count == 0)
+							haveTask.Reset();
+						return true;
+					}
+					colorNotWorking.Set();
+				}
+			}
+			return false;
+		}
+	}
 }

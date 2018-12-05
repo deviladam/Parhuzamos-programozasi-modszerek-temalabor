@@ -10,9 +10,9 @@ namespace Feladat05.UnitTest
         [TestMethod]
         public void StartProducer_GenerateMoreTask()
         {
-            var args = new string[]{"2", "1"};
+            var args = new string[] { "2", "1" };
             var logic = new Logic();
-            int temp;
+            int temp = -1;
             logic.Init(args);
 
             var result = logic.colorTasks[0].Get(out temp);
@@ -20,7 +20,7 @@ namespace Feladat05.UnitTest
             Assert.IsFalse(result);
 
             logic.StartProducer();
-            Thread.Sleep(1250);//wait 
+            Thread.Sleep(900);//wait 
 
             result = logic.colorTasks[0].Get(out temp);
 
@@ -33,9 +33,9 @@ namespace Feladat05.UnitTest
         {
             var args = new string[] { "2", "1" };
             var logic = new Logic();
-            int temp;
+            int temp = -1;
 
-            logic.Init(args);
+			logic.Init(args);
             logic.colorTasks[0].Add(int.MaxValue);
             var result1 = logic.colorTasks[0].Get(out temp);
             var result2 = logic.colorTasks[0].Get(out temp);
@@ -50,9 +50,9 @@ namespace Feladat05.UnitTest
         {
             var args = new string[] { "2", "1" };
             var logic = new Logic();
-            int temp;
+            int temp = -1;
 
-            logic.Init(args);
+			logic.Init(args);
             logic.colorTasks[0].Add(123);
             logic.colorTasks[0].Add(345);
 
@@ -68,9 +68,9 @@ namespace Feladat05.UnitTest
         {
             var args = new string[] { "2", "1" };
             var logic = new Logic();
-            int temp;
+            int temp = -1;
 
-            logic.Init(args);
+			logic.Init(args);
             logic.colorTasks[0].Add(int.MaxValue);
             Thread consumer = new Thread(logic.ConsumerThread);
             consumer.Start();
@@ -87,9 +87,9 @@ namespace Feladat05.UnitTest
         {
             var args = new string[] { "2", "2" };
             var logic = new Logic();
-            int temp;
+            int temp = -1;
 
-            logic.Init(args);
+			logic.Init(args);
             logic.colorTasks[0].Add(int.MaxValue);
             logic.colorTasks[1].Add(int.MaxValue);
             Thread consumer = new Thread(logic.ConsumerThread);
