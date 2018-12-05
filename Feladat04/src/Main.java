@@ -33,6 +33,18 @@ public class Main {
                 finish = Instant.now();
                 ResultPrint("ParallelMerge",Duration.between(start, finish).toMillis(),size);
                 break;
+            case "a": //mereshez
+                start = Instant.now();
+                QuickSort(0, size - 1);
+                finish = Instant.now();
+                long quick = Duration.between(start, finish).toMillis();
+                ResetVec();
+                start = Instant.now();
+                ParallelMerge(0, size - 1, 100000);
+                finish = Instant.now();
+                long paral = Duration.between(start, finish).toMillis();
+                System.out.println(""+size+';'+quick+';'+paral);
+                break;
              default:
                  System.out.println("ELső paraméter: tömb mérete Második paraméter: algoritmus q - quicksort/m - parallel merge");
                  break;
